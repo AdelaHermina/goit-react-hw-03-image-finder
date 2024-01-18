@@ -36,29 +36,33 @@ export default class App extends Component {
     if (prevName !== nextName || prevPage !== nextPage) {
       this.setState({ status: Status.PENDING });
 
-      fetchPictures(nextName, this.state.page)
-        .then(images => {
-          if (images.hits.length < 1) {
-            this.setState({
-              showButton: false,
-              status: Status.IDLE,
-            });
-            return alert('No images on your query');
-          }
+      try {
+        fetchPictures(nextName, this.state.page)
+          .then(images => {
+            if (images.hits.length < 1) {
+              this.setState({
+                showButton: false,
+                status: Status.IDLE,
+              });
+              return alert('No images on your query');
+            }
 
-          this.setState(prevState => ({
-            images: [...prevState.images, ...images.hits],
-          }));
-
-          this.setState({
-            status: Status.RESOLVED,
-            showButton:
-              this.state.page < Math.ceil(images.total / 12) ? true : false,
+            this.setState(prevState => ({
+              images: [...prevState.images, ...images.hits],
+              status: Status.RESOLVED,
+              showButton: this.state.page < Math.ceil(images.total / 12),
+            }));
+          })
+          .catch(error => {
+            console.log(error);
+            this.setState({ status: Status.REJECTED });
+            
           });
-        })
-
-        .then(console.log(this.state.images))
-        .catch(error => console.log(error));
+      } catch (error) {
+        console.error('Error during data fetching', error);
+        this.setState({ status: Status.REJECTED });
+        
+      }
     }
   }
 
